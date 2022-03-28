@@ -1,6 +1,8 @@
 import Vue from 'vue'
-import { ACCESS_TOKEN, USER } from '@/store/mutation-types'
+import { ACCESS_TOKEN } from '@/store/mutation-types'
 import apiClient from '@/utils/api-client'
+import { login, userInfo } from '@/apis'
+import storage from 'store'
 
 const user = {
   state: {
@@ -17,7 +19,7 @@ const user = {
       state.token = null
     },
     SET_USER: (state, user) => {
-      Vue.ls.set(USER, user)
+      // Vue.ls.set(USER, user)
       state.user = user
     }
   },
@@ -37,31 +39,48 @@ const user = {
     },
     refreshUserCache({ commit }) {
       return new Promise((resolve, reject) => {
-        apiClient.user
-          .getProfile()
-          .then(response => {
-            commit('SET_USER', response.data)
-            resolve(response)
+        userInfo()
+          .then(result => {
+            commit('SET_USER', result.data.data)
+            resolve(result)
           })
-          .catch(error => {
-            reject(error)
+          .catch(err => {
+            reject(err)
           })
+        // apiClient.user
+        //   .getProfile()
+        //   .then(response => {
+        //     commit('SET_USER', response.data)
+        //     resolve(response)
+        //   })
+        //   .catch(error => {
+        //     reject(error)
+        //   })
       })
     },
-    login({ commit }, { username, password, authcode }) {
+    login({ commit }, { username, password }) {
       return new Promise((resolve, reject) => {
-        apiClient
-          .login({ username, password, authcode })
-          .then(response => {
-            const token = response.data
-            Vue.$log.debug('Got token', token)
-            commit('SET_TOKEN', token)
+        login(username, password)
+          .then(result => {
+            storage.set(ACCESS_TOKEN, result.data.access_token, 7 * 24 * 60 * 60 * 1000)
+            commit('SET_TOKEN', result.data.access_token)
+            resolve(result)
+          })
+          .catch(err => {
+            reject(err)
+          })
+        // apiClient
+        //   .login({ username, password, authcode })
+        //   .then(response => {
+        //     const token = response.data
+        //     Vue.$log.debug('Got token', token)
+        //     commit('SET_TOKEN', token)
 
-            resolve(response)
-          })
-          .catch(error => {
-            reject(error)
-          })
+        //     resolve(response)
+        //   })
+        //   .catch(error => {
+        //     reject(error)
+        //   })
       })
     },
     logout({ commit }) {

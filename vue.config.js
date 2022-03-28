@@ -25,5 +25,18 @@ module.exports = defineConfig({
 
   lintOnSave: false,
   transpileDependencies: [],
-  productionSourceMap: false
+  productionSourceMap: false,
+  devServer: {
+    port: 8001,
+    proxy: {
+      '/oauth2': {
+        target: 'http://10.10.10.107:9000'
+      },
+      '/api/admin': {
+        target: 'http://10.10.10.107:9000/halo-admin',
+        ws: true,
+        changeOrigin: true
+      }
+    }
+  }
 })
