@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import { ACCESS_TOKEN } from '@/store/mutation-types'
 import apiClient from '@/utils/api-client'
-import { login, userInfo } from '@/apis'
+import { apiClient as hangarApiClient, authApi } from '@/apis'
 import storage from 'store'
 
 const user = {
@@ -16,6 +16,7 @@ const user = {
     },
     CLEAR_TOKEN: state => {
       Vue.ls.remove(ACCESS_TOKEN)
+      storage.remove(ACCESS_TOKEN)
       state.token = null
     },
     SET_USER: (state, user) => {
@@ -39,7 +40,8 @@ const user = {
     },
     refreshUserCache({ commit }) {
       return new Promise((resolve, reject) => {
-        userInfo()
+        hangarApiClient
+          .get('/api/admin/user-info')
           .then(result => {
             commit('SET_USER', result.data.data)
             resolve(result)
@@ -60,7 +62,8 @@ const user = {
     },
     login({ commit }, { username, password }) {
       return new Promise((resolve, reject) => {
-        login(username, password)
+        authApi
+          .loginByUsername(username, password, 'halo-admin', '123456')
           .then(result => {
             storage.set(ACCESS_TOKEN, result.data.access_token, 7 * 24 * 60 * 60 * 1000)
             commit('SET_TOKEN', result.data.access_token)
@@ -85,16 +88,9 @@ const user = {
     },
     logout({ commit }) {
       return new Promise(resolve => {
-        apiClient
-          .logout()
-          .then(() => {
-            commit('CLEAR_TOKEN')
-            commit('SET_USER', {})
-            resolve()
-          })
-          .catch(() => {
-            resolve()
-          })
+        commit('CLEAR_TOKEN')
+        commit('SET_USER', {})
+        resolve()
       })
     },
     refreshToken({ commit }, refreshToken) {
